@@ -1,0 +1,46 @@
+{# templates/core/search.html #}
+{% extends "core/base.html" %}
+
+{% block content %}
+<section style="max-width:1100px;margin:0 auto">
+  <h1 style="margin:10px 20px 6px">Rezultate pentru: “{{ q }}”</h1>
+  <p style="opacity:.8;margin:0 20px 12px">{{ total }} articole g?site</p>
+
+  {% if page_obj.object_list %}
+    <ul class="arch-articles">
+      {% for art in page_obj.object_list %}
+        <li>
+          <time class="arch-time">
+            {{ art.publish_at|date:"d.m.Y H:i" }}
+            · {{ art.category.name }}
+          </time>
+          <p class="arch-text">
+            <a
+              href="{% url 'core:archive-category-day'
+                        art.category.edition
+                        art.category.slug
+                        art.publish_at|date:'Y'
+                        art.publish_at|date:'m'
+                        art.publish_at|date:'d' %}"
+              style="color:#fff;text-decoration:none">
+              {{ art.title }}
+            </a>
+          </p>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <div class="pager" style="display:flex;gap:8px;align-items:center;margin:10px 20px 30px">
+      {% if page_obj.has_previous %}
+        <a href="?q={{ q }}&page={{ page_obj.previous_page_number }}" class="pager-btn">« Înapoi</a>
+      {% endif %}
+      <span style="opacity:.8">Pagina {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?q={{ q }}&page={{ page_obj.next_page_number }}" class="pager-btn">Înainte »</a>
+      {% endif %}
+    </div>
+  {% else %}
+    <p style="opacity:.8;margin:10px 20px 30px">N-am g?sit nimic. Încearc? alte cuvinte.</p>
+  {% endif %}
+</section>
+{% endblock %}

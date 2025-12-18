@@ -1,0 +1,21 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<main style="max-width:680px;margin:20px auto;">
+    <h1>Setari site</h1>
+    <form method="post" enctype="multipart/form-data" style="display:grid;gap:10px;">
+        {% csrf_token %}
+        <label>Nume site</label>
+        {{ form.site_name }}
+        <label>Logo (PNG/JPG)</label>
+        {% if form.instance.logo %}
+        <div><img src="{{ form.instance.logo.url }}" alt="logo" style="max-height:60px"></div>
+        {% endif %}
+        {{ form.logo }}
+        <label>URGENT - text</label>
+        {{ form.urgent_text }}
+        <label>URGENT - link</label>
+        {{ form.urgent_link }}
+        <button type="submit" style="margin-top:10px;padding:10px 14px;border:0;border-radius:10px;background:#ff0033;color:#fff;font-weight:700;">Salveaza</button>
+    </form>
+</main>
+{% endblock %}

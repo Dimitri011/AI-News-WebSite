@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:1100px;margin:20px auto;padding:0 10px">
+    <h1 style="margin:0 0 10px">{{ category.name }} — {{ day|date:"d MMMM yyyy" }}</h1>
+
+    {% if articles %}
+    <ul style="list-style:none;padding:0;margin:14px 0;display:grid;gap:10px">
+        {% for a in articles %}
+        <li style="border:1px solid #222;border-radius:10px;padding:10px;background:#0b0b0b">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                <h3 style="margin:0">{{ a.title }}</h3>
+                <small style="opacity:.8">{{ a.publish_at|date:"H:i" }}</small>
+            </div>
+            <p style="margin:6px 0 0">{{ a.content }}</p>
+            {% if a.is_urgent %}
+            <span style="margin-top:6px;display:inline-block;background:#b91c1c;color:#fff;padding:2px 6px;border-radius:6px;font-size:12px">
+                URGENT
+            </span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>Nu exist? articole pentru ziua selectat?.</p>
+    {% endif %}
+</div>
+{% endblock %}

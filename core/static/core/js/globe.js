@@ -1,0 +1,96 @@
+function createWireGlobe(containerId) {
+    const container = document.getElementById(containerId);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+    camera.position.z = 3;
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    container.appendChild(renderer.domElement);
+
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const group = new THREE.Group();
+
+    const radius = 1, numParallels = 12, numMeridians = 24, segments = 512;
+
+    // paralele
+    for (let i = 1; i < numParallels; i++) {
+        const phi = Math.PI * (i / numParallels - 0.5);
+        const y = radius * Math.sin(phi);
+        const r = radius * Math.cos(phi);
+        const points = [];
+        for (let j = 0; j <= segments; j++) {
+            const angle = (j / segments) * Math.PI * 2;
+            const x = r * Math.cos(angle);
+            const z = r * Math.sin(angle);
+            points.push(new THREE.Vector3(x, y, z));
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const circle = new THREE.LineLoop(geometry, lineMaterial);
+        group.add(circle);
+    }
+
+    // meridiane
+    for (let j = 0; j < numMeridians; j++) {
+        const lambda = (j / numMeridians) * Math.PI * 2;
+        const points = [];
+        for (let k = 0; k <= segments; k++) {
+            const theta = (k / segments) * Math.PI - Math.PI / 2;
+            const x = radius * Math.cos(theta) * Math.cos(lambda);
+            const y = radius * Math.sin(theta);
+            const z = radius * Math.cos(theta) * Math.sin(lambda);
+            points.push(new THREE.Vector3(x, y, z));
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, lineMaterial);
+        group.add(line);
+    }
+
+    // imagini din static
+    const assets = (window && window.GLOBE_ASSETS) || {};
+    const romania = assets.romania || "romania.png";
+    const europa = assets.europa || "europa.png";
+
+    const loader = new THREE.TextureLoader();
+    const addFlag = (img, w, h) => {
+        loader.load(img, (tex) => {
+            tex.colorSpace = THREE.SRGBColorSpace;
+            const mat = new THREE.MeshBasicMaterial({
+                map: tex, transparent: true, side: THREE.DoubleSide,
+                depthTest: true, depthWrite: false, alphaTest: 0.01
+            });
+            const geo = new THREE.PlaneGeometry(w, h);
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(0, 0, 0.06);
+            mesh.renderOrder = 2;
+            group.add(mesh);
+        }, undefined, (err) => console.warn("Nu pot inc?rca imaginea:", img, err));
+    };
+
+    if (containerId === "glob-stanga") addFlag(romania, 1.3, 0.9);
+    if (containerId === "glob-dreapta") addFlag(europa, 1.65, 1.075);
+
+    scene.add(group);
+
+    function resizeRendererToDisplaySize() {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        if (width === 0 || height === 0) return;
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        resizeRendererToDisplaySize();
+        group.rotation.y += 0.002;
+        renderer.render(scene, camera);
+    }
+
+    animate();
+    window.addEventListener("resize", resizeRendererToDisplaySize);
+}
+
+createWireGlobe("glob-stanga");
+createWireGlobe("glob-dreapta");

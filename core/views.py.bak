@@ -1,0 +1,150 @@
+# core/views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views import View
+from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from django.http import Http404, HttpResponse
+from django.contrib import messages
+import traceback
+
+from .models import SiteSettings, Category, Article
+
+
+def safe_local_date(dt):
+    """Returneaza data locala indiferent daca datetime-ul e naive sau aware."""
+    if dt is None:
+        return timezone.localdate()
+    try:
+        if timezone.is_naive(dt):
+            dt = timezone.make_aware(dt, timezone.get_current_timezone())
+        return timezone.localtime(dt).date()
+    except Exception:
+        try:
+            return dt.date()
+        except Exception:
+            return timezone.localdate()
+
+
+class HomeView(View):
+    def get(self, request):
+        return render(request, "core/home.html", {"settings": SiteSettings.get_solo()})
+
+
+class DayView(View):
+    VALID = {"loco", "externe"}
+
+    def get(self, request, edition):
+        if edition not in self.VALID:
+            raise Http404()
+        cats = Category.objects.filter(edition=edition).order_by("order", "name")
+        ctx = {"edition": edition, "categories": cats, "settings": SiteSettings.get_solo()}
+        return render(request, "core/day.html", ctx)
+
+
+class CategoryDetailView(ListView):
+    template_name = "core/category.html"
+    context_object_name = "articles"
+    paginate_by = 20
+
+    def get_queryset(self):
+        self.edition = self.kwargs["edition"]
+        self.category = get_object_or_404(
+            Category, edition=self.edition, slug=self.kwargs["slug"]
+        )
+        return self.category.articles.published()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["settings"] = SiteSettings.get_solo()
+        ctx["edition"] = self.edition
+        ctx["category"] = self.category
+        return ctx
+
+
+class ArchiveView(View):
+    VALID = {"loco", "externe"}
+
+    def get(self, request, edition):
+        try:
+            if edition not in self.VALID:
+                raise Http404()
+
+            qs = (
+                Article.objects.published()
+                .filter(category__edition=edition)
+                .select_related("category")
+                .order_by("-publish_at")
+            )
+
+            today = timezone.localdate()
+            yesterday = today - timezone.timedelta(days=1)
+
+            today_items, yesterday_items, older = [], [], {}
+
+            for a in qs:
+                d = safe_local_date(a.publish_at)
+                item = {"article": a, "category": a.category}
+                if d == today:
+                    today_items.append(item)
+                elif d == yesterday:
+                    yesterday_items.append(item)
+                else:
+                    older.setdefault(d, []).append(item)
+
+            older_sorted = sorted(older.items(), key=lambda x: x[0], reverse=True)
+
+            ctx = {
+                "edition": edition,
+                "today": today_items,
+                "yesterday": yesterday_items,
+                "older": older_sorted,
+                "settings": SiteSettings.get_solo(),
+            }
+            return render(request, "core/archive.html", ctx)
+
+        except Exception:
+            # dac? mai apare alt? eroare, o vezi direct în browser
+            html = "<h1>Eroare in arhiva</h1><pre style='white-space:pre-wrap'>%s</pre>" % (
+                traceback.format_exc()
+            )
+            return HttpResponse(html, status=500)
+
+
+class UrgentUpdateView(LoginRequiredMixin, View):
+    def post(self, request):
+        s = SiteSettings.get_solo()
+        s.urgent_text = (request.POST.get("urgent_text") or "").strip()
+        s.urgent_link = (request.POST.get("urgent_link") or "").strip()
+        s.save()
+        messages.success(request, "URGENT salvat.")
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+class ArticleCreateView(LoginRequiredMixin, View):
+    """Postare rapida; o poti apela si din widget-ul tau."""
+    def post(self, request, edition, slug):
+        cat = get_object_or_404(Category, edition=edition, slug=slug)
+        title = (request.POST.get("title") or "").strip()
+        content = (request.POST.get("content") or "").strip()
+        is_urgent = bool(request.POST.get("is_urgent"))
+        when_raw = (request.POST.get("publish_at") or "").strip()
+
+        when = parse_datetime(when_raw) if when_raw else timezone.now()
+
+        if not title or not content:
+            messages.error(request, "Completati titlul si continutul.")
+            return redirect(f"/{edition}/")
+
+        Article.objects.create(
+            title=title,
+            slug=f"{slug}-{int(when.timestamp())}",
+            category=cat,
+            content=content,
+            status="published",
+            publish_at=when,
+            is_urgent=is_urgent,
+        )
+        messages.success(request, f"Postat la {cat.name}.")
+        return redirect(f"/{edition}/")

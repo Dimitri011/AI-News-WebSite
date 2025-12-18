@@ -1,0 +1,297 @@
+/* Telegrame chat dock – full CSS file (paste whole file)
+   - desktop: compact card at bottom-right
+   - mobile: not full width, card look
+   - FAB (AI chat) pill with icon + label + subtle pulse
+   - FAB hides when panel is open
+   - supports .tgchat--left to stick on left side
+*/
+
+/* ---------- Vars ---------- */
+:root {
+    /* desktop size */
+    --tgchat-w: 340px;
+    --tgchat-h: 48vh; /* < 1/2 screen */
+    /* mobile size (card, not full width) */
+    --tgchat-w-m-min: 240px;
+    --tgchat-w-m-viewport: 86vw;
+    --tgchat-w-m-max: 320px;
+    --tgchat-h-m: 42vh;
+    /* margins (leave room for sticky ads if needed) */
+    --tgchat-bottom: 12px;
+    --tgchat-right: 12px;
+    /* colors */
+    --tgchat-bg: #0d0d0d;
+    --tgchat-bd: #1f1f1f;
+    --tgchat-txt: #ffffff;
+    --tgchat-ac: #2b82ff;
+    /* FAB visuals */
+    --tgchat-fab-size: 44px; /* min diameter */
+    --tgchat-fab-pad: 10px;
+    --tgchat-fab-color: #ffffff;
+    --tgchat-fab-grad1: #115af7;
+    --tgchat-fab-grad2: #2367fa;
+    --tgchat-fab-shadow: 0 10px 24px rgba(43,130,255,.35);
+    --tgchat-ring: 0 0 0 4px rgba(43,130,255,.12);
+}
+
+/* ---------- Root container ---------- */
+#tgchat {
+    position: fixed;
+    inset: auto var(--tgchat-right) var(--tgchat-bottom) auto;
+    z-index: 9999;
+    pointer-events: none; /* children enable themselves */
+}
+
+/* optional: stick on left side by adding class "tgchat--left" on #tgchat */
+.tgchat--left {
+    inset: auto auto var(--tgchat-bottom) var(--tgchat-right) !important;
+}
+
+/* ---------- Panel ---------- */
+.tgchat__panel {
+    width: var(--tgchat-w);
+    max-width: 92vw;
+    height: var(--tgchat-h);
+    background: var(--tgchat-bg);
+    color: var(--tgchat-txt);
+    border: 1px solid var(--tgchat-bd);
+    border-radius: 14px;
+    box-shadow: 0 12px 28px rgba(0,0,0,.5);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    overflow: hidden;
+    transform: translateY(8px);
+    opacity: 0;
+    transition: transform .2s ease, opacity .2s ease;
+}
+
+/* ---------- FAB (AI chat) ---------- */
+.tgchat__fab {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: var(--tgchat-fab-size);
+    min-width: var(--tgchat-fab-size);
+    padding: 0 var(--tgchat-fab-pad);
+    border: 0;
+    border-radius: 999px;
+    color: var(--tgchat-fab-color);
+    background-image: linear-gradient(135deg, var(--tgchat-fab-grad1), var(--tgchat-fab-grad2));
+    box-shadow: var(--tgchat-fab-shadow);
+    cursor: pointer;
+    pointer-events: auto;
+    /* initial pill is compact; expand on hover (desktop) */
+    width: var(--tgchat-fab-size);
+    overflow: hidden;
+    transition: width .18s ease, box-shadow .18s ease, transform .12s ease, opacity .15s ease;
+}
+
+/* FAB icon */
+.tgchat__fab-ico {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    fill: currentColor;
+}
+
+/* FAB label */
+.tgchat__fab-label {
+    white-space: nowrap;
+    font-size: .95rem;
+    line-height: 1;
+    letter-spacing: .3px;
+    opacity: .95;
+}
+
+/* desktop: expand pill at hover to reveal label clearly */
+@media (hover: hover) {
+    .tgchat__fab:hover {
+        width: 148px;
+        box-shadow: var(--tgchat-fab-shadow), var(--tgchat-ring);
+    }
+}
+
+/* subtle pulse to draw attention */
+.tgchat__fab::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 0 0 rgba(255,255,255,0);
+    animation: tgFabPulse 2.6s ease-out infinite;
+    pointer-events: none;
+}
+
+@keyframes tgFabPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(43,130,255,0);
+    }
+
+    60% {
+        box-shadow: 0 0 0 10px rgba(43,130,255,.15);
+    }
+
+    100% {
+        box-shadow: 0 0 0 16px rgba(43,130,255,0);
+    }
+}
+
+/* when chat opens, hide FAB so it does not overlap controls */
+.tgchat--open .tgchat__fab {
+    opacity: 0;
+    transform: scale(.94);
+    pointer-events: none;
+}
+
+/* ---------- Backdrop ---------- */
+.tgchat__backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+    opacity: 0;
+    transition: opacity .2s ease;
+    pointer-events: none;
+}
+
+/* ---------- Header ---------- */
+.tgchat__hdr {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--tgchat-bd);
+}
+
+.tgchat__title {
+    font-weight: 800;
+}
+
+.tgchat__state {
+    margin-left: auto;
+    opacity: .85;
+    font-size: .9rem;
+}
+
+.tgchat__close {
+    border: 0;
+    background: transparent;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+/* ---------- Body & messages ---------- */
+.tgchat__body {
+    padding: 10px 12px;
+    overflow: auto;
+}
+
+.tgchat__msg {
+    padding: 10px 12px;
+    border: 1px solid var(--tgchat-bd);
+    border-radius: 12px;
+    margin: 6px 0;
+    line-height: 1.45;
+}
+
+.tgchat__msg--user {
+    background: #101b2d;
+    border-color: #24324a;
+}
+
+.tgchat__msg--bot {
+    background: #111611;
+    border-color: #1e2a1e;
+}
+
+.tgchat__msg--sys {
+    background: #0f0f0f;
+    border-color: #292929;
+    opacity: .95;
+}
+
+/* ---------- Form ---------- */
+.tgchat__form {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--tgchat-bd);
+    padding: 10px;
+}
+
+.tgchat__input {
+    flex: 1;
+    background: #0b0b0b;
+    color: #fff;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 10px 12px;
+    resize: none;
+    max-height: 160px;
+    outline: none;
+}
+
+    .tgchat__input:focus {
+        border-color: #3a3a3a;
+    }
+
+.tgchat__send {
+    border: 0;
+    background: var(--tgchat-ac);
+    color: #fff;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ---------- States ---------- */
+.tgchat--closed .tgchat__panel {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+}
+
+.tgchat--closed .tgchat__backdrop {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.tgchat--open .tgchat__panel {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.tgchat--open .tgchat__backdrop {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ---------- Mobile (<= 768px) ---------- */
+@media (max-width: 768px) {
+    /* keep a compact card on the bottom-right, not full width */
+    #tgchat {
+        inset: auto 10px calc(10px + env(safe-area-inset-bottom)) auto !important;
+    }
+
+    .tgchat__panel {
+        width: clamp(var(--tgchat-w-m-min), var(--tgchat-w-m-viewport), var(--tgchat-w-m-max));
+        height: var(--tgchat-h-m);
+        border-radius: 12px;
+    }
+
+    .tgchat__fab {
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom));
+        width: auto; /* show label on mobile too */
+        padding-right: 12px;
+        height: 40px;
+    }
+
+    .tgchat__backdrop {
+        background: rgba(0,0,0,.25); /* lighter backdrop on mobile */
+    }
+}

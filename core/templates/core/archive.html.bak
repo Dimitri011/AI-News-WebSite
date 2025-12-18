@@ -1,0 +1,52 @@
+{% extends "core/base.html" %}
+{% block content %}
+<div style="max-width:1100px;margin:20px auto;padding:0 10px">
+    <h1 style="margin:0 0 10px">Arhiv? — {{ edition|upper }}</h1>
+
+    {% if today %}
+    <h2 style="margin:12px 0 6px">Azi</h2>
+    <ul style="list-style:none;padding:0;margin:0 0 12px;display:grid;gap:8px">
+        {% for it in today %}
+        <li style="border:1px solid #222;border-radius:10px;padding:10px;background:#0b0b0b">
+            <small style="opacity:.8">{{ it.article.publish_at|date:"H:i" }}</small>
+            <strong style="margin-left:8px">{{ it.article.title }}</strong>
+            <span style="opacity:.8"> — <a href="{% url 'core:category' it.category.edition it.category.slug %}">{{ it.category.name }}</a></span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if yesterday %}
+    <h2 style="margin:12px 0 6px">Ieri</h2>
+    <ul style="list-style:none;padding:0;margin:0 0 12px;display:grid;gap:8px">
+        {% for it in yesterday %}
+        <li style="border:1px solid #222;border-radius:10px;padding:10px;background:#0b0b0b">
+            <small style="opacity:.8">{{ it.article.publish_at|date:"H:i" }}</small>
+            <strong style="margin-left:8px">{{ it.article.title }}</strong>
+            <span style="opacity:.8"> — <a href="{% url 'core:category' it.category.edition it.category.slug %}">{{ it.category.name }}</a></span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if older %}
+    <h2 style="margin:12px 0 6px">Arhiv?</h2>
+    {% for d, items in older %}
+    <h3 style="margin:12px 0 6px">{{ d|date:"d MMMM yyyy" }}</h3>
+    <ul style="list-style:none;padding:0;margin:0 0 12px;display:grid;gap:8px">
+        {% for it in items %}
+        <li style="border:1px solid #222;border-radius:10px;padding:10px;background:#0b0b0b">
+            <small style="opacity:.8">{{ it.article.publish_at|date:"H:i" }}</small>
+            <strong style="margin-left:8px">{{ it.article.title }}</strong>
+            <span style="opacity:.8"> — <a href="{% url 'core:category' it.category.edition it.category.slug %}">{{ it.category.name }}</a></span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+    {% endif %}
+
+    {% if not today and not yesterday and not older %}
+    <p>Nu s-au g?sit articole în aceast? edi?ie.</p>
+    {% endif %}
+</div>
+{% endblock %}

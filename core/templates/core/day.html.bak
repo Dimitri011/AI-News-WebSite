@@ -1,0 +1,23 @@
+﻿{% extends 'core/base.html' %}
+{% load static %}
+
+{% block head_css %}
+<link rel="stylesheet" href="{% static 'core/css/styles-news.css' %}">
+{% endblock %}
+
+{% block content %}
+<main>
+    <p style="margin-left:20px;"><a href="{% url 'archive' edition %}">Vezi arhiva {{ edition|upper }}</a></p>
+
+    <ul class="topics">
+        {% for c in categories %}
+        <li>
+            <i class="{{ c.icon }}"></i>
+            <a href="{% url 'category' edition c.slug %}" style="color:inherit;text-decoration:none;">
+                {{ c.name }}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</main>
+{% endblock %}
